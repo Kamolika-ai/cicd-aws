@@ -1,0 +1,25 @@
+{
+  "name": "cloud-native-cicd-project",
+  "version": "1.0.0",
+  "description": "Automated CI/CD Pipeline for Cloud-Native Web Application Deployment",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node tests/test.js"
+  },
+  "keywords": [
+    "devops",
+    "cicd",
+    "aws",
+    "codepipeline",
+    "codebuild",
+    "docker",
+    "cloud-native"
+  ],
+  "author": "DevOps Engineering Student",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

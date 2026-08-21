@@ -1,0 +1,66 @@
+# ==============================================================================
+# AWS CodeBuild Specification (buildspec.yml)
+# Project: Automated CI/CD Pipeline for Cloud-Native Web Application Deployment
+# ==============================================================================
+
+version: 0.2
+
+phases:
+  # Phase 1: Install runtime dependencies
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "================================================================="
+      - echo "🚀 [PHASE 1 - INSTALL] Initializing build environment..."
+      - echo "Node.js Version:" && node -v
+      - echo "NPM Version:" && npm -v
+      - echo "Installing application dependencies..."
+      - npm install
+      - echo "================================================================="
+
+  # Phase 2: Pre-build validation & automated testing
+  # NOTE: If any command in this phase fails, the pipeline terminates immediately!
+  pre_build:
+    commands:
+      - echo "================================================================="
+      - echo "🧪 [PHASE 2 - PRE_BUILD] Running Automated Test Suite..."
+      - echo "Executing: npm test"
+      - npm test
+      - echo "✔ All automated tests passed successfully."
+      - echo "================================================================="
+
+  # Phase 3: Build Docker container image
+  build:
+    commands:
+      - echo "================================================================="
+      - echo "🐳 [PHASE 3 - BUILD] Building Docker Container Image..."
+      - echo "Build triggered at $(date)"
+      - docker build -t clouddeploy-app:latest .
+      - echo "✔ Docker image built and tagged: clouddeploy-app:latest"
+      - echo "================================================================="
+
+  # Phase 4: Post-build packaging and preparation
+  post_build:
+    commands:
+      - echo "================================================================="
+      - echo "📦 [PHASE 4 - POST_BUILD] Preparing deployment artifacts..."
+      - echo "Build completed successfully on $(date)"
+      - echo "Passing build artifacts to AWS CodePipeline Deploy Stage."
+      - echo "================================================================="
+
+# Artifacts required by AWS CodePipeline for deployment to Elastic Beanstalk / App Runner
+artifacts:
+  files:
+    - 'Dockerrun.aws.json'
+    - 'Dockerfile'
+    - '.dockerignore'
+    - 'package.json'
+    - 'package-lock.json'
+    - 'server.js'
+    - 'app/**/*'
+  discard-paths: no
+
+cache:
+  paths:
+    - 'node_modules/**/*'

@@ -1,0 +1,19 @@
+# Ignored files for Docker build context
+node_modules
+npm-debug.log
+.git
+.gitignore
+.dockerignore
+docs/
+screenshots/
+tests/
+*.md
+.env
+.env.*
+*.pem
+*.key
+credentials
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

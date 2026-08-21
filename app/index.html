@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudDeploy — Automated CI/CD Pipeline Dashboard</title>
+    <meta name="description" content="Production DevOps Dashboard demonstrating an automated CI/CD pipeline on AWS for cloud-native web application deployment.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <!-- Top Navigation / Header -->
+        <header class="top-nav">
+            <div class="brand-container">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+                        <polyline points="13 13 16 10 13 7"></polyline>
+                        <line x1="8" y1="10" x2="16" y2="10"></line>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>CloudDeploy</h1>
+                    <span class="sub-heading">CI/CD Dashboard</span>
+                </div>
+            </div>
+
+            <div class="header-badges">
+                <div class="badge-item status-live">
+                    <span class="pulse-dot"></span>
+                    <span id="env-badge-text">PRODUCTION ONLINE</span>
+                </div>
+                <div class="badge-item version-pill" id="app-version-pill">
+                    <span class="version-label">VERSION</span>
+                    <span class="version-number" id="version-text">v1.0.0</span>
+                </div>
+                <div class="badge-item cloud-region">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                    <span>AWS ap-south-1</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Project Banner / Hero -->
+            <section class="hero-banner">
+                <div class="hero-content">
+                    <div class="hero-tag">🎓 B.Tech Final Year / Semester DevOps Project</div>
+                    <h2 class="hero-title">Automated CI/CD Pipeline for Cloud-Native Deployment</h2>
+                    <p class="hero-desc">
+                        Fully automated GitOps workflow demonstrating continuous integration, automated unit testing, 
+                        Docker containerization, and automated cloud delivery using AWS CodePipeline and CodeBuild.
+                    </p>
+                </div>
+                <div class="hero-action-buttons">
+                    <button class="btn btn-primary" id="btn-trigger-pipeline-demo">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        Simulate Pipeline Run
+                    </button>
+                    <button class="btn btn-secondary" id="btn-open-viva-modal">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        Viva Q&A Guide
+                    </button>
+                </div>
+            </section>
+
+            <!-- Metrics & Status Cards Grid -->
+            <section class="metrics-grid">
+                <!-- Card 1: Application Health -->
+                <div class="metric-card card-health">
+                    <div class="card-header">
+                        <span class="card-title">Application Status</span>
+                        <div class="card-icon icon-success">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="card-value" id="card-app-status">ONLINE</div>
+                    <div class="card-footer">
+                        <span class="footer-label">Uptime:</span>
+                        <span class="footer-value" id="app-uptime-text">Calculating...</span>
+                    </div>
+                </div>
+
+                <!-- Card 2: Pipeline State -->
+                <div class="metric-card card-pipeline">
+                    <div class="card-header">
+                        <span class="card-title">AWS CodePipeline</span>
+                        <div class="card-icon icon-pipeline">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="6" y1="3" x2="6" y2="15"></line>
+                                <circle cx="18" cy="6" r="3"></circle>
+                                <circle cx="6" cy="18" r="3"></circle>
+                                <path d="M18 9a9 9 0 0 1-9 9"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="card-value status-highlight" id="card-pipeline-status">SUCCESS</div>
+                    <div class="card-footer">
+                        <span class="footer-label">Trigger:</span>
+                        <span class="footer-value">GitHub Push (main)</span>
+                    </div>
+                </div>
+
+                <!-- Card 3: CodeBuild & Tests -->
+                <div class="metric-card card-build">
+                    <div class="card-header">
+                        <span class="card-title">AWS CodeBuild</span>
+                        <div class="card-icon icon-build">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="card-value text-emerald" id="card-build-status">PASSED</div>
+                    <div class="card-footer">
+                        <span class="footer-label">Automated Tests:</span>
+                        <span class="footer-value">100% Passing</span>
+                    </div>
+                </div>
+
+                <!-- Card 4: Docker Container -->
+                <div class="metric-card card-docker">
+                    <div class="card-header">
+                        <span class="card-title">Docker Engine</span>
+                        <div class="card-icon icon-docker">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+                                <path d="M12 12v9"></path>
+                                <path d="m8 17 4 4 4-4"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="card-value" id="card-docker-status">CONTAINERIZED</div>
+                    <div class="card-footer">
+                        <span class="footer-label">Base Image:</span>
+                        <span class="footer-value">node:20-alpine</span>
+                    </div>
+                </div>
+
+                <!-- Card 5: Deployment Target -->
+                <div class="metric-card card-deploy">
+                    <div class="card-header">
+                        <span class="card-title">Cloud Deployment</span>
+                        <div class="card-icon icon-cloud">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                                <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                                <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="card-value" id="card-deploy-status">DEPLOYED</div>
+                    <div class="card-footer">
+                        <span class="footer-label">Platform:</span>
+                        <span class="footer-value">AWS Elastic Beanstalk</span>
+                    </div>
+                </div>
+
+                <!-- Card 6: Application Version -->
+                <div class="metric-card card-version">
+                    <div class="card-header">
+                        <span class="card-title">Release Version</span>
+                        <div class="card-icon icon-tag">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                                <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="card-value font-mono text-cyan" id="card-version-val">v1.0.0</div>
+                    <div class="card-footer">
+                        <span class="footer-label">Strategy:</span>
+                        <span class="footer-value">Semantic Versioning</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- End-to-End Visual CI/CD Pipeline Section -->
+            <section class="pipeline-section">
+                <div class="section-heading-row">
+                    <div>
+                        <h3 class="section-title">Automated CI/CD Pipeline Architecture</h3>
+                        <p class="section-subtitle">Real-time visualization of the automated deployment stages from Code to Cloud</p>
+                    </div>
+                    <span class="pipeline-state-badge" id="pipeline-overall-badge">PIPELINE ACTIVE</span>
+                </div>
+
+                <div class="pipeline-flow-container">
+                    <!-- Step 1: Developer -->
+                    <div class="pipeline-node" id="node-developer">
+                        <div class="node-icon">💻</div>
+                        <div class="node-header">
+                            <span class="node-step">STAGE 1</span>
+                            <span class="node-title">Developer</span>
+                        </div>
+                        <p class="node-desc">Local changes committed via Git CLI</p>
+                        <div class="node-tag"><code>git push origin main</code></div>
+                        <div class="node-status-indicator status-done">Ready</div>
+                    </div>
+
+                    <div class="pipeline-connector"><div class="connector-line"></div></div>
+
+                    <!-- Step 2: GitHub -->
+                    <div class="pipeline-node" id="node-github">
+                        <div class="node-icon">🐙</div>
+                        <div class="node-header">
+                            <span class="node-step">STAGE 2</span>
+                            <span class="node-title">GitHub Repo</span>
+                        </div>
+                        <p class="node-desc">Receives commit & emits webhook event</p>
+                        <div class="node-tag">Version Control</div>
+                        <div class="node-status-indicator status-done">Tracked</div>
+                    </div>
+
+                    <div class="pipeline-connector"><div class="connector-line"></div></div>
+
+                    <!-- Step 3: AWS CodePipeline (Source) -->
+                    <div class="pipeline-node" id="node-codepipeline">
+                        <div class="node-icon">⚡</div>
+                        <div class="node-header">
+                            <span class="node-step">STAGE 3</span>
+                            <span class="node-title">CodePipeline</span>
+                        </div>
+                        <p class="node-desc">Triggers workflow orchestration</p>
+                        <div class="node-tag">AWS Orchestrator</div>
+                        <div class="node-status-indicator status-done">Triggered</div>
+                    </div>
+
+                    <div class="pipeline-connector"><div class="connector-line"></div></div>
+
+                    <!-- Step 4: AWS CodeBuild -->
+                    <div class="pipeline-node" id="node-codebuild">
+                        <div class="node-icon">🔨</div>
+                        <div class="node-header">
+                            <span class="node-step">STAGE 4</span>
+                            <span class="node-title">AWS CodeBuild</span>
+                        </div>
+                        <p class="node-desc">Installs deps, runs tests & builds Docker image</p>
+                        <div class="node-tag"><code>buildspec.yml</code></div>
+                        <div class="node-status-indicator status-done">Success</div>
+                    </div>
+
+                    <div class="pipeline-connector"><div class="connector-line"></div></div>
+
+                    <!-- Step 5: Docker Container -->
+                    <div class="pipeline-node" id="node-docker">
+                        <div class="node-icon">🐳</div>
+                        <div class="node-header">
+                            <span class="node-step">STAGE 5</span>
+                            <span class="node-title">Docker Engine</span>
+                        </div>
+                        <p class="node-desc">Standardized container packaging</p>
+                        <div class="node-tag"><code>Dockerfile</code></div>
+                        <div class="node-status-indicator status-done">Packaged</div>
+                    </div>
+
+                    <div class="pipeline-connector"><div class="connector-line"></div></div>
+
+                    <!-- Step 6: Live Production Deployment -->
+                    <div class="pipeline-node" id="node-production">
+                        <div class="node-icon">🌐</div>
+                        <div class="node-header">
+                            <span class="node-step">STAGE 6</span>
+                            <span class="node-title">AWS Production</span>
+                        </div>
+                        <p class="node-desc">Elastic Beanstalk deploys live container</p>
+                        <div class="node-tag">Public Endpoint</div>
+                        <div class="node-status-indicator status-done">Live Online</div>
+                    </div>
+                </div>
+
+                <!-- Pipeline Execution Simulation Console -->
+                <div class="simulation-terminal" id="sim-terminal">
+                    <div class="terminal-header">
+                        <div class="terminal-dots">
+                            <span class="dot dot-red"></span>
+                            <span class="dot dot-yellow"></span>
+                            <span class="dot dot-green"></span>
+                        </div>
+                        <span class="terminal-title">AWS CodePipeline & CodeBuild Execution Logs</span>
+                        <span class="terminal-status" id="terminal-status-text">IDLE / STANDBY</span>
+                    </div>
+                    <div class="terminal-body" id="terminal-output">
+[INFO] Pipeline initial state: Standby.
+[INFO] Source: GitHub (branch: refs/heads/main).
+[INFO] CodeBuild: buildspec.yml loaded. Ready for automatic trigger on next commit.
+[TIP] Click "Simulate Pipeline Run" above to see the step-by-step CI/CD execution.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dual Interactive Diagnostic & Tech Stack Panels -->
+            <div class="dual-panel-grid">
+                <!-- Panel 1: Live Health Check Inspector -->
+                <section class="panel-box">
+                    <div class="panel-header">
+                        <div class="panel-title-wrap">
+                            <div class="panel-icon">🩺</div>
+                            <div>
+                                <h3 class="panel-title">Automated Health Check Validator</h3>
+                                <p class="panel-subtitle">Evaluates <code>GET /health</code> endpoint response</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-sm btn-outline" id="btn-ping-health">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 4v6h-6"></path>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                            Ping /health
+                        </button>
+                    </div>
+                    <div class="panel-body">
+                        <div class="health-meta-row">
+                            <div class="meta-item">
+                                <span class="meta-label">ENDPOINT:</span>
+                                <span class="meta-val font-mono">/health</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">HTTP STATUS:</span>
+                                <span class="meta-val text-emerald font-mono" id="health-http-code">200 OK</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">LATENCY:</span>
+                                <span class="meta-val font-mono" id="health-latency">~2ms</span>
+                            </div>
+                        </div>
+                        <div class="code-block-container">
+                            <pre><code id="health-json-output">{
+  "status": "healthy",
+  "service": "CloudDeploy DevOps Dashboard",
+  "version": "v1.0.0",
+  "environment": "Production (AWS Cloud)",
+  "uptime_seconds": 0,
+  "timestamp": "2026-08-21T10:35:00.000Z",
+  "http_code": 200
+}</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Panel 2: DevOps Architecture & Technical Stack -->
+                <section class="panel-box">
+                    <div class="panel-header">
+                        <div class="panel-title-wrap">
+                            <div class="panel-icon">⚙️</div>
+                            <div>
+                                <h3 class="panel-title">Technology Specifications</h3>
+                                <p class="panel-subtitle">Cloud-native stack & configuration components</p>
+                            </div>
+                        </div>
+                        <span class="spec-badge">B.Tech Syllabus Aligned</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="tech-spec-list">
+                            <div class="tech-row">
+                                <span class="tech-key">Version Control:</span>
+                                <span class="tech-val">Git & GitHub (Webhook automated trigger)</span>
+                            </div>
+                            <div class="tech-row">
+                                <span class="tech-key">CI/CD Orchestration:</span>
+                                <span class="tech-val">AWS CodePipeline (Multi-stage automated pipeline)</span>
+                            </div>
+                            <div class="tech-row">
+                                <span class="tech-key">Build & Test Engine:</span>
+                                <span class="tech-val">AWS CodeBuild (Executing <code>buildspec.yml</code>)</span>
+                            </div>
+                            <div class="tech-row">
+                                <span class="tech-key">Containerization:</span>
+                                <span class="tech-val">Docker (Node 20 Alpine lightweight container)</span>
+                            </div>
+                            <div class="tech-row">
+                                <span class="tech-key">Cloud Hosting Target:</span>
+                                <span class="tech-val">AWS Elastic Beanstalk (Docker Platform) / App Runner</span>
+                            </div>
+                            <div class="tech-row">
+                                <span class="tech-key">Automated Testing:</span>
+                                <span class="tech-val">Node.js Automated Test Suite (<code>tests/test.js</code>)</span>
+                            </div>
+                            <div class="tech-row">
+                                <span class="tech-key">Security Practices:</span>
+                                <span class="tech-val">IAM Least Privilege Roles, non-root Docker user, .gitignore</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Intentional Failure / Live Demo Section -->
+            <section class="demo-guide-card">
+                <div class="guide-header">
+                    <div class="guide-badge">🧪 Live Demonstration Guide for Examiner / Faculty</div>
+                    <h3 class="guide-title">How to Demonstrate CI/CD Pipeline Automation in Real-Time</h3>
+                </div>
+                <div class="guide-grid">
+                    <div class="guide-step-card">
+                        <div class="step-num">Step 1</div>
+                        <h4>1. Version Update Demo (Green Flow)</h4>
+                        <p>Change version in <code>server.js</code> & <code>package.json</code> from <code>v1.0.0</code> to <code>v1.0.1</code>.</p>
+                        <div class="code-snippet"><code>git commit -am "chore: bump version to v1.0.1" &amp;&amp; git push</code></div>
+                        <p class="step-foot">Observe CodePipeline automatically start, build, test, and deploy the new version!</p>
+                    </div>
+
+                    <div class="guide-step-card">
+                        <div class="step-num">Step 2</div>
+                        <h4>2. Failure Test Demo (Red Flow)</h4>
+                        <p>Uncomment the intentional failure in <code>tests/test.js</code> or add a broken assertion.</p>
+                        <div class="code-snippet"><code>git commit -am "test: intentional test failure" &amp;&amp; git push</code></div>
+                        <p class="step-foot">CodeBuild detects test failure & immediately aborts. Bad code NEVER reaches production!</p>
+                    </div>
+
+                    <div class="guide-step-card">
+                        <div class="step-num">Step 3</div>
+                        <h4>3. Self-Healing & Fix (Recovery)</h4>
+                        <p>Fix the test or revert the commit and push again.</p>
+                        <div class="code-snippet"><code>git commit -am "fix: restore passing tests" &amp;&amp; git push</code></div>
+                        <p class="step-foot">Pipeline transitions back to SUCCESS and completes deployment seamlessly.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p>© 2026 <strong>CloudDeploy CI/CD Project</strong> — University B.Tech Computer Science & Engineering DevOps Project.</p>
+                <p class="footer-sub">Architecture: Developer → GitHub → AWS CodePipeline → AWS CodeBuild → Docker → AWS Deployment</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Viva Q&A Modal Dialog -->
+    <div class="modal-backdrop" id="viva-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-icon">📚</span>
+                    <div>
+                        <h3 class="modal-title">DevOps Viva & Examination Quick Reference</h3>
+                        <p class="modal-subtitle">Essential questions and concise answers for B.Tech project viva</p>
+                    </div>
+                </div>
+                <button class="btn-close-modal" id="btn-close-viva-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="viva-qa-item">
+                    <div class="viva-q">Q1: What is CI/CD and why is it important in modern cloud engineering?</div>
+                    <div class="viva-a"><strong>CI (Continuous Integration):</strong> Automatically building and testing code on every commit to catch bugs early.<br><strong>CD (Continuous Delivery/Deployment):</strong> Automatically packaging and deploying validated code to staging/production with zero manual intervention.</div>
+                </div>
+
+                <div class="viva-qa-item">
+                    <div class="viva-q">Q2: What is the purpose of <code>buildspec.yml</code> in AWS CodeBuild?</div>
+                    <div class="viva-a">It is a YAML configuration file that defines the commands and environment CodeBuild uses during the build lifecycle across 4 main phases: <code>install</code>, <code>pre_build</code> (unit tests), <code>build</code> (Docker build), and <code>post_build</code> (artifact generation).</div>
+                </div>
+
+                <div class="viva-qa-item">
+                    <div class="viva-q">Q3: What happens if an automated test fails during AWS CodeBuild?</div>
+                    <div class="viva-a">The <code>pre_build</code> phase exits with a non-zero exit code (code 1). AWS CodeBuild terminates with status <code>FAILED</code>, and AWS CodePipeline immediately stops the pipeline, preventing bad code from ever reaching the live deployment environment.</div>
+                </div>
+
+                <div class="viva-qa-item">
+                    <div class="viva-q">Q4: Why do we containerize this application with Docker?</div>
+                    <div class="viva-a">Docker packages the application, runtime (Node.js), dependencies, and OS libraries into a lightweight, portable container. This eliminates the classic "it works on my machine" problem, ensuring identical behavior across local developer workstations and AWS production.</div>
+                </div>
+
+                <div class="viva-qa-item">
+                    <div class="viva-q">Q5: How does AWS CodePipeline know when a developer pushes code to GitHub?</div>
+                    <div class="viva-a">GitHub uses AWS CodeStar Source Connections or Webhooks. When a <code>git push</code> occurs on the <code>main</code> branch, GitHub sends an event payload to AWS CodePipeline, which immediately triggers the automated pipeline execution.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <span>Refer to <code>docs/viva-questions.md</code> for all 35+ comprehensive viva questions and answers.</span>
+                <button class="btn btn-primary" id="btn-close-viva-modal-2">Close Guide</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
