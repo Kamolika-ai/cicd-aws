@@ -275,23 +275,28 @@ function setupLoginPage() {
         if (spinner) spinner.style.display = 'inline-block';
         if (btnText) btnText.textContent = 'Authenticating...';
 
-        // Simulate Mock Authentication
-        setTimeout(() => {
-            if (btnSubmit) btnSubmit.disabled = false;
-            if (spinner) spinner.style.display = 'none';
-            if (btnText) btnText.textContent = 'Sign In';
+        // Async Authentication & Socket Event Emission
+        (async () => {
+            try {
+                const res = await window.CloudDeployAuth.login(email, password);
+                if (btnSubmit) btnSubmit.disabled = false;
+                if (spinner) spinner.style.display = 'none';
+                if (btnText) btnText.textContent = 'Sign In';
 
-            // Mock login check
-            const user = window.CloudDeployAuth.login(email, password);
-            if (user) {
-                window.CloudDeployRouter.navigate('/dashboard');
-            } else {
-                if (alertError && errText) {
-                    errText.textContent = 'Invalid email or password. Please check your credentials and try again.';
-                    alertError.style.display = 'flex';
+                if (res && res.success) {
+                    window.CloudDeployRouter.navigate('/dashboard');
+                } else {
+                    if (alertError && errText) {
+                        errText.textContent = (res && res.message) || 'Invalid email or password. Please check your credentials and try again.';
+                        alertError.style.display = 'flex';
+                    }
                 }
+            } catch (err) {
+                if (btnSubmit) btnSubmit.disabled = false;
+                if (spinner) spinner.style.display = 'none';
+                if (btnText) btnText.textContent = 'Sign In';
             }
-        }, 850);
+        })();
     });
 }
 

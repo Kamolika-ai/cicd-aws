@@ -33,54 +33,113 @@ const CloudDeployAuth = {
     },
 
     /**
-     * Mock Login Workflow
+     * Login Workflow with Backend API & Socket Sync
      */
-    login(email, password) {
+    async login(email, password) {
         if (!email || !password) {
             return { success: false, message: 'Email and password are required.' };
         }
-        const user = {
-            id: 'usr-9021',
-            name: email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-            email: email,
-            role: 'Lead DevOps Engineer',
-            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-            initials: email.charAt(0).toUpperCase(),
-            verified: true,
-            status: 'Active'
-        };
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
-        return { success: true, message: 'Login successful!', user };
+
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            if (data.success && data.user) {
+                const user = {
+                    id: data.user.id || 'usr-9021',
+                    name: data.user.name,
+                    email: data.user.email,
+                    role: data.user.role || 'Lead DevOps Engineer',
+                    avatar: data.user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
+                    initials: data.user.name ? data.user.name.charAt(0).toUpperCase() : 'D',
+                    verified: !!data.user.verified,
+                    status: 'Active'
+                };
+                localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+                return { success: true, message: data.message || 'Login successful!', user };
+            }
+            return { success: false, message: data.message || 'Invalid credentials.' };
+        } catch (e) {
+            // Fallback for offline mode
+            const user = {
+                id: 'usr-9021',
+                name: email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                email: email,
+                role: 'Lead DevOps Engineer',
+                avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
+                initials: email.charAt(0).toUpperCase(),
+                verified: true,
+                status: 'Active'
+            };
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+            return { success: true, message: 'Login successful!', user };
+        }
     },
 
     /**
-     * Mock Sign Up Workflow
+     * Sign Up Workflow with MongoDB Persistence & Real-Time Socket Event
      */
-    signup(name, email, password) {
+    async signup(name, email, password) {
         if (!name || !email || !password) {
             return { success: false, message: 'All fields are required.' };
         }
-        const user = {
-            id: 'usr-' + Math.floor(1000 + Math.random() * 9000),
-            name: name,
-            email: email,
-            role: 'DevOps Engineer',
-            avatar: '',
-            initials: name.charAt(0).toUpperCase(),
-            verified: false,
-            status: 'Pending Verification'
-        };
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
-        return { success: true, message: 'Registration successful! Verification code sent.', user, requireVerification: true };
+
+        try {
+            const res = await fetch('/api/auth/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            });
+            const data = await res.json();
+            if (data.success && data.user) {
+                const user = {
+                    id: data.user.id || ('usr-' + Math.floor(1000 + Math.random() * 9000)),
+                    name: data.user.name,
+                    email: data.user.email,
+                    role: data.user.role || 'DevOps Engineer',
+                    avatar: data.user.avatar || '',
+                    initials: name.charAt(0).toUpperCase(),
+                    verified: false,
+                    status: 'Pending Verification'
+                };
+                localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+                return { success: true, message: data.message || 'Registration successful! Verification code sent.', user, requireVerification: true };
+            }
+            return { success: false, message: data.message || 'Registration failed.' };
+        } catch (e) {
+            // Fallback
+            const user = {
+                id: 'usr-' + Math.floor(1000 + Math.random() * 9000),
+                name: name,
+                email: email,
+                role: 'DevOps Engineer',
+                avatar: '',
+                initials: name.charAt(0).toUpperCase(),
+                verified: false,
+                status: 'Pending Verification'
+            };
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+            return { success: true, message: 'Registration successful! Verification code sent.', user, requireVerification: true };
+        }
     },
 
     /**
      * Mock Email Verification Workflow
      */
-    verifyEmail(code) {
+    async verifyEmail(code) {
         if (!code || code.length < 4) {
             return { success: false, message: 'Please enter a valid 6-digit verification code.' };
         }
+        try {
+            await fetch('/api/auth/verify-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+        } catch (e) {}
         const user = this.getCurrentUser();
         if (user) {
             user.verified = true;
@@ -114,7 +173,10 @@ const CloudDeployAuth = {
     /**
      * Logout Session Clearing
      */
-    logout() {
+    async logout() {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+        } catch (e) {}
         localStorage.removeItem(this.STORAGE_KEY);
         return { success: true, message: 'Logged out safely.' };
     }

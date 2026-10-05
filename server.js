@@ -3,11 +3,18 @@
  * Topic: Automated CI/CD Pipeline for Cloud-Native Web Application Deployment
  */
 
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const http = require('http');
 const mongoose = require('mongoose');
+const realtimeService = require('./src/services/realtimeService');
+const githubService = require('./src/services/githubService');
+const awsService = require('./src/services/awsService');
 
 const app = express();
+const server = http.createServer(app);
+
 const PORT = process.env.PORT || 8080;
 const APP_VERSION = process.env.APP_VERSION || 'v1.0.0';
 const ENVIRONMENT = process.env.NODE_ENV === 'production' ? 'Production (AWS Cloud)' : 'Development';
@@ -23,14 +30,25 @@ mongoose.connect(MONGODB_URI, {
 }).then(() => {
     isMongoConnected = true;
     console.log(`✓ Connected to MongoDB database: ${MONGODB_URI}`);
+    realtimeService.emitDatabaseStatus(true);
 }).catch((err) => {
     isMongoConnected = false;
     console.log(`ℹ MongoDB Notice: Operating in standalone / fallback mode (${err.message})`);
+    realtimeService.emitDatabaseStatus(false);
 });
 
-mongoose.connection.on('connected', () => { isMongoConnected = true; });
-mongoose.connection.on('disconnected', () => { isMongoConnected = false; });
-mongoose.connection.on('error', () => { isMongoConnected = false; });
+mongoose.connection.on('connected', () => {
+    isMongoConnected = true;
+    realtimeService.emitDatabaseStatus(true);
+});
+mongoose.connection.on('disconnected', () => {
+    isMongoConnected = false;
+    realtimeService.emitDatabaseStatus(false);
+});
+mongoose.connection.on('error', () => {
+    isMongoConnected = false;
+    realtimeService.emitDatabaseStatus(false);
+});
 
 // Mongoose User Schema & Model
 const userSchema = new mongoose.Schema({
@@ -45,8 +63,16 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
-// Middleware
-app.use(express.json());
+// Initialize Real-Time WebSocket & GitHub Services
+realtimeService.init(server, mongoose, User);
+githubService.init(mongoose);
+
+// Middleware with rawBody capture for GitHub Webhook X-Hub-Signature-256 verification
+app.use(express.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf;
+    }
+}));
 app.use(express.static(path.join(__dirname, 'app')));
 
 // Route: Health Check Endpoint for Load Balancers, ECS, Beanstalk, and Automated Tests
@@ -160,6 +186,7 @@ app.post('/api/auth/login', async (req, res) => {
                     role: dbUser.role,
                     avatar: dbUser.avatar
                 };
+                realtimeService.emitUserLoggedIn(mockUser);
                 return res.status(200).json({
                     success: true,
                     message: 'Login successful (Authenticated via MongoDB).',
@@ -175,6 +202,8 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     mockUser.email = email;
+    mockUser.name = email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    realtimeService.emitUserLoggedIn(mockUser);
     res.status(200).json({
         success: true,
         message: 'Login successful.',
@@ -204,6 +233,7 @@ app.post('/api/auth/signup', async (req, res) => {
                 role: newUser.role,
                 avatar: newUser.avatar
             };
+            realtimeService.emitUserRegistered(newUser);
             return res.status(201).json({
                 success: true,
                 message: 'Registration successful in MongoDB! Verification code sent to email.',
@@ -218,6 +248,7 @@ app.post('/api/auth/signup', async (req, res) => {
     mockUser.name = name;
     mockUser.email = email;
     mockUser.verified = false;
+    realtimeService.emitUserRegistered({ id: 'usr-' + Date.now(), name, email, verified: false, role: 'DevOps Engineer' });
     res.status(201).json({
         success: true,
         message: 'Registration successful! Verification code sent to email.',
@@ -256,7 +287,79 @@ app.post('/api/auth/reset-password', (req, res) => {
 });
 
 app.post('/api/auth/logout', (req, res) => {
+    realtimeService.emitUserLoggedOut(mockUser);
     res.status(200).json({ success: true, message: 'Logged out successfully.' });
+});
+
+// Real-Time Trigger Endpoint for Pipeline Simulations
+app.post('/api/pipeline/trigger', (req, res) => {
+    realtimeService.triggerPipelineSimulation(req.body);
+    res.status(200).json({ success: true, message: 'Pipeline simulation triggered live via Socket.IO across connected dashboards.' });
+});
+
+// AWS Real Pipeline Status Endpoint
+app.get('/api/pipeline/status', async (req, res) => {
+    try {
+        const status = await awsService.getFullPipelineStatus();
+        res.status(200).json(status);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Granular AWS Service APIs
+app.get('/api/aws/pipeline', async (req, res) => {
+    const data = await awsService.fetchCodePipelineStatus();
+    res.status(200).json({ success: true, pipeline: data });
+});
+
+app.get('/api/aws/build', async (req, res) => {
+    const data = await awsService.fetchCodeBuildStatus();
+    res.status(200).json({ success: true, build: data });
+});
+
+app.get('/api/aws/deployment', async (req, res) => {
+    const data = await awsService.fetchElasticBeanstalkStatus();
+    res.status(200).json({ success: true, deployment: data });
+});
+
+app.get('/api/aws/health', async (req, res) => {
+    const data = await awsService.checkLiveAppHealth();
+    res.status(200).json({ success: true, health: data });
+});
+
+// GitHub Webhook Listener Endpoint with X-Hub-Signature-256 Verification
+app.post('/api/github/webhook', async (req, res) => {
+    const signature = req.headers['x-hub-signature-256'];
+    const eventType = req.headers['x-github-event'] || 'push';
+    const secret = process.env.GITHUB_WEBHOOK_SECRET;
+
+    // Signature verification using raw request buffer
+    const isValid = githubService.verifySignature(req.rawBody || Buffer.from(JSON.stringify(req.body)), signature, secret);
+    if (!isValid) {
+        console.error('✖ Rejected unauthorized GitHub webhook attempt (Invalid X-Hub-Signature-256)');
+        return res.status(401).json({ success: false, message: 'Invalid GitHub webhook signature.' });
+    }
+
+    try {
+        const result = await githubService.processWebhook(eventType, req.body);
+        return res.status(200).json({
+            success: true,
+            event: eventType,
+            message: `GitHub webhook event '${eventType}' processed successfully and broadcast to Socket.IO clients.`,
+            result
+        });
+    } catch (err) {
+        console.error('GitHub Webhook Processing Error:', err);
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// GitHub Event History & Repository State API
+app.get('/api/github/events', async (req, res) => {
+    const history = await githubService.getEventHistory(20);
+    const repoState = githubService.getRepoState();
+    res.status(200).json({ success: true, repoState, events: history });
 });
 
 // Route: Fallback for SPA routing / Dashboard
@@ -267,12 +370,12 @@ app.get('*', (req, res) => {
 // Start Server only if executed directly (supports testing without port collisions)
 let serverInstance = null;
 if (require.main === module) {
-    serverInstance = app.listen(PORT, () => {
+    serverInstance = server.listen(PORT, () => {
         const localUrl = `http://localhost:${PORT}/`;
         
         console.log(`CloudDeploy DevOps Dashboard`);
         console.log(`────────────────────────────────`);
-        console.log(`✓ Server running`);
+        console.log(`✓ Server running with Real-Time WebSockets (Socket.IO)`);
         console.log(`✓ Environment: ${ENVIRONMENT}`);
         console.log(`✓ Port: ${PORT}`);
         console.log(`✓ MongoDB Status: ${isMongoConnected ? 'CONNECTED' : 'DISCONNECTED / FALLBACK'}`);
@@ -326,5 +429,5 @@ process.on('SIGTERM', () => {
     mongoose.connection.close();
 });
 
-module.exports = { app, APP_VERSION, PORT };
+module.exports = { app, server, APP_VERSION, PORT };
 

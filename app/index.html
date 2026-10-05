@@ -36,6 +36,10 @@
             </div>
 
             <div class="header-badges">
+                <div class="badge-item socket-status-live" id="socket-connection-pill" title="Socket.IO Real-Time Connection">
+                    <span class="pulse-dot" id="socket-pulse-dot"></span>
+                    <span id="socket-connection-text">🟢 Live</span>
+                </div>
                 <div class="badge-item status-live">
                     <span class="pulse-dot"></span>
                     <span id="env-badge-text">PRODUCTION ONLINE</span>
@@ -166,10 +170,10 @@
                                 <span class="card-title">AWS CodePipeline</span>
                                 <div class="card-icon icon-pipeline">⚡</div>
                             </div>
-                            <div class="card-value status-highlight" id="card-pipeline-status">SUCCESS</div>
+                            <div class="card-value status-highlight" id="card-pipeline-status">READY</div>
                             <div class="card-footer">
                                 <span class="footer-label">Trigger:</span>
-                                <span class="footer-value">GitHub Push (main)</span>
+                                <span class="footer-value" id="card-pipeline-trigger">GitHub Push (main)</span>
                             </div>
                         </div>
 
@@ -178,10 +182,10 @@
                                 <span class="card-title">AWS CodeBuild</span>
                                 <div class="card-icon icon-build">🔨</div>
                             </div>
-                            <div class="card-value text-emerald" id="card-build-status">PASSED</div>
+                            <div class="card-value text-emerald" id="card-build-status">READY</div>
                             <div class="card-footer">
                                 <span class="footer-label">Automated Tests:</span>
-                                <span class="footer-value">4/4 Passing (100%)</span>
+                                <span class="footer-value" id="card-test-results">4/4 Passing (100%)</span>
                             </div>
                         </div>
 
@@ -190,10 +194,10 @@
                                 <span class="card-title">Docker Engine</span>
                                 <div class="card-icon icon-docker">🐳</div>
                             </div>
-                            <div class="card-value" id="card-docker-status">CONTAINERIZED</div>
+                            <div class="card-value" id="card-docker-status">READY</div>
                             <div class="card-footer">
                                 <span class="footer-label">Base Image:</span>
-                                <span class="footer-value">node:20-alpine</span>
+                                <span class="footer-value" id="card-docker-footer">node:20-alpine</span>
                             </div>
                         </div>
 
@@ -209,6 +213,18 @@
                             </div>
                         </div>
 
+                        <div class="metric-card card-users" id="card-user-count-wrapper">
+                            <div class="card-header">
+                                <span class="card-title">Registered Users</span>
+                                <div class="card-icon icon-user">👥</div>
+                            </div>
+                            <div class="card-value text-cyan live-user-count" id="card-total-users">1</div>
+                            <div class="card-footer">
+                                <span class="footer-label">DB Status:</span>
+                                <span class="footer-value" id="card-db-status">CONNECTED (MongoDB)</span>
+                            </div>
+                        </div>
+
                         <div class="metric-card card-version">
                             <div class="card-header">
                                 <span class="card-title">Release Version</span>
@@ -218,6 +234,59 @@
                             <div class="card-footer">
                                 <span class="footer-label">Strategy:</span>
                                 <span class="footer-value">Semantic Versioning</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Executable 10-Stage GitHub Actions CI/CD Pipeline Card -->
+                    <section class="panel-box" style="margin-top: 16px;">
+                        <div class="panel-header" style="flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span class="pulse-dot" style="background: #38bdf8; box-shadow: 0 0 10px #38bdf8;"></span>
+                                <div>
+                                    <h3 class="panel-title" style="margin: 0; font-size: 16px;">Executable GitHub Actions CI/CD Pipeline</h3>
+                                    <p class="panel-subtitle" style="margin: 0; font-size: 12px; color: #94a3b8;">Real-time job & step execution status derived live from GitHub Actions</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <a id="gh-repo-url-btn" href="https://github.com" target="_blank" class="btn btn-sm btn-outline" style="display: flex; align-items: center; gap: 6px; text-decoration: none;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                                    <span>View Workflow on GitHub</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="panel-body" style="padding: 16px;">
+                            <!-- Repository & Run Metadata Header -->
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px;">
+                                <div><span style="color: #64748b;">Repository:</span> <strong id="gh-repo-name" style="color: #38bdf8;">clouddeploy</strong></div>
+                                <div><span style="color: #64748b;">Branch:</span> <span id="gh-latest-branch" style="font-family: monospace; color: #a7f3d0;">main</span></div>
+                                <div><span style="color: #64748b;">Commit SHA:</span> <span id="gh-latest-commit-sha" style="font-family: monospace; color: #38bdf8;">a82f91c</span></div>
+                                <div><span style="color: #64748b;">Author:</span> <span id="gh-latest-commit-author" style="color: #cbd5e1;">DevOps Lead</span></div>
+                            </div>
+
+                            <!-- 10 Executable Pipeline Stages Flow Grid -->
+                            <div id="executable-pipeline-stages-container" class="pipeline-stages-flow-grid">
+                                <!-- Dynamic Stage Cards -->
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Real-Time Event Activity Feed -->
+                    <section class="panel-box" style="margin-top: 16px;">
+                        <div class="panel-header">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="pulse-dot" style="background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
+                                <h3 class="panel-title">Real-Time Event Activity Feed</h3>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 12px; color: #94a3b8;">Active Sockets: <strong id="live-active-connections" style="color: #38bdf8;">1</strong></span>
+                                <button class="btn btn-sm btn-primary" onclick="window.CloudDeployRealtime.triggerPipelineDemo()">Trigger Pipeline Live ⚡</button>
+                            </div>
+                        </div>
+                        <div class="panel-body" style="padding: 12px 16px;">
+                            <div id="live-activity-feed-container" class="live-activity-container">
+                                <div class="activity-empty-state" style="color: #64748b; font-size: 13px; text-align: center; padding: 16px;">Connecting to real-time event stream...</div>
                             </div>
                         </div>
                     </section>
@@ -374,7 +443,8 @@
                             <div>
                                 <h3 class="panel-title">GitHub Repository Explorer</h3>
                                 <p class="panel-subtitle"><code>cloud-native-cicd-project</code> (branch:
-                                    <strong>main</strong>)</p>
+                                    <strong>main</strong>)
+                                </p>
                             </div>
                         </div>
                         <div class="panel-body" id="repo-files-container">
@@ -740,7 +810,8 @@
                     <div class="viva-q">Q2: What is the purpose of <code>buildspec.yml</code> in AWS CodeBuild?</div>
                     <div class="viva-a">It defines the commands used by CodeBuild across 4 phases: <code>install</code>,
                         <code>pre_build</code> (unit tests), <code>build</code> (Docker build), and
-                        <code>post_build</code> (artifact packaging).</div>
+                        <code>post_build</code> (artifact packaging).
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -752,7 +823,9 @@
         </div>
     </div>
 
-    <!-- Modular Script Imports (Phase 1 Frontend Architecture) -->
+    <!-- Modular Script Imports (Phase 1 Frontend Architecture & Socket.IO Realtime) -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/realtime.js"></script>
     <script src="js/mock.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/router.js"></script>

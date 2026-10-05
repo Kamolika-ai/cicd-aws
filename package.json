@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node server.js --dev",
     "start": "node server.js",
-    "test": "node tests/test.js"
+    "test": "node tests/test.js",
+    "lint": "eslint ."
   },
   "keywords": [
     "devops",
@@ -21,8 +22,16 @@
   "author": "DevOps Engineering Student",
   "license": "MIT",
   "dependencies": {
+    "@aws-sdk/client-codebuild": "^3.1146.0",
+    "@aws-sdk/client-codepipeline": "^3.1146.0",
+    "@aws-sdk/client-elastic-beanstalk": "^3.1146.0",
+    "dotenv": "^18.0.5",
     "express": "^4.21.2",
     "mongoose": "^9.10.4",
-    "open": "^8.4.2"
+    "open": "^8.4.2",
+    "socket.io": "^4.8.4"
+  },
+  "devDependencies": {
+    "eslint": "^10.12.0"
   }
 }
