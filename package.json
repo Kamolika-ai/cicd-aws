@@ -4,8 +4,8 @@
   "description": "Automated CI/CD Pipeline for Cloud-Native Web Application Deployment",
   "main": "server.js",
   "scripts": {
+    "dev": "node server.js --dev",
     "start": "node server.js",
-    "dev": "node server.js",
     "test": "node tests/test.js"
   },
   "keywords": [
@@ -15,11 +15,14 @@
     "codepipeline",
     "codebuild",
     "docker",
-    "cloud-native"
+    "cloud-native",
+    "authentication"
   ],
   "author": "DevOps Engineering Student",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "mongoose": "^9.10.4",
+    "open": "^8.4.2"
   }
 }

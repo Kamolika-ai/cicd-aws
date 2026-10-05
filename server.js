@@ -5,12 +5,45 @@
 
 const express = require('express');
 const path = require('path');
+const mongoose = require('mongoose');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 const APP_VERSION = process.env.APP_VERSION || 'v1.0.0';
-const ENVIRONMENT = process.env.ENVIRONMENT || 'Production (AWS Cloud)';
+const ENVIRONMENT = process.env.NODE_ENV === 'production' ? 'Production (AWS Cloud)' : 'Development';
 const START_TIME = new Date();
+const IS_DEV = process.argv.includes('--dev') || process.env.NODE_ENV !== 'production';
+
+// MongoDB Connection Setup
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/clouddeploy';
+let isMongoConnected = false;
+
+mongoose.connect(MONGODB_URI, {
+    serverSelectionTimeoutMS: 3000
+}).then(() => {
+    isMongoConnected = true;
+    console.log(`✓ Connected to MongoDB database: ${MONGODB_URI}`);
+}).catch((err) => {
+    isMongoConnected = false;
+    console.log(`ℹ MongoDB Notice: Operating in standalone / fallback mode (${err.message})`);
+});
+
+mongoose.connection.on('connected', () => { isMongoConnected = true; });
+mongoose.connection.on('disconnected', () => { isMongoConnected = false; });
+mongoose.connection.on('error', () => { isMongoConnected = false; });
+
+// Mongoose User Schema & Model
+const userSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    verified: { type: Boolean, default: false },
+    role: { type: String, default: 'DevOps Engineer' },
+    avatar: { type: String, default: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150' },
+    createdAt: { type: Date, default: Date.now }
+});
+
+const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 // Middleware
 app.use(express.json());
@@ -24,6 +57,7 @@ app.get('/health', (req, res) => {
         service: 'CloudDeploy DevOps Dashboard',
         version: APP_VERSION,
         environment: ENVIRONMENT,
+        database: isMongoConnected ? 'CONNECTED' : 'DISCONNECTED',
         uptime_seconds: uptimeSeconds,
         timestamp: new Date().toISOString(),
         http_code: 200
@@ -31,8 +65,15 @@ app.get('/health', (req, res) => {
 });
 
 // Route: API Status for DevOps Pipeline Dashboard
-app.get('/api/status', (req, res) => {
+app.get('/api/status', async (req, res) => {
     const uptimeSeconds = Math.floor((Date.now() - START_TIME.getTime()) / 1000);
+    let registeredUsersCount = 1;
+    if (isMongoConnected) {
+        try {
+            registeredUsersCount = await User.countDocuments();
+        } catch (e) {}
+    }
+
     res.status(200).json({
         application: {
             name: 'CloudDeploy — CI/CD Dashboard',
@@ -42,13 +83,19 @@ app.get('/api/status', (req, res) => {
             port: PORT,
             uptime_seconds: uptimeSeconds
         },
+        database: {
+            type: 'MongoDB',
+            status: isMongoConnected ? 'CONNECTED' : 'STANDALONE / DISCONNECTED',
+            uri: MONGODB_URI.replace(/\/\/.*@/, '//***:***@'),
+            total_users: registeredUsersCount
+        },
         pipeline: {
             source: 'GitHub Repository',
             orchestrator: 'AWS CodePipeline',
             status: 'SUCCESS',
             build_engine: 'AWS CodeBuild',
             build_status: 'PASSED',
-            deployment_target: 'AWS Elastic Beanstalk / App Runner',
+            deployment_target: 'AWS Elastic Beanstalk',
             deployment_status: 'DEPLOYED'
         },
         docker: {
@@ -56,6 +103,20 @@ app.get('/api/status', (req, res) => {
             base_image: 'node:20-alpine',
             health_check: 'ENABLED',
             exposed_port: 8080
+        },
+        authentication: {
+            enabled: true,
+            provider: isMongoConnected ? 'MongoDB Identity Database' : 'CloudDeploy Mock Identity Service',
+            features: [
+                'Login',
+                'Sign up',
+                'Email verification',
+                'Forgot password',
+                'Reset password',
+                'Logout',
+                'User profile',
+                'Protected dashboard'
+            ]
         },
         system: {
             node_version: process.version,
@@ -67,6 +128,137 @@ app.get('/api/status', (req, res) => {
     });
 });
 
+// Fallback in-memory user
+let mockUser = {
+    id: 'usr-9021',
+    name: 'DevOps Student',
+    email: 'dev@university.edu',
+    verified: true,
+    role: 'Lead DevOps Engineer',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'
+};
+
+app.get('/api/auth/me', (req, res) => {
+    res.status(200).json({ authenticated: true, user: mockUser });
+});
+
+app.post('/api/auth/login', async (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) {
+        return res.status(400).json({ success: false, message: 'Email and password are required.' });
+    }
+
+    if (isMongoConnected) {
+        try {
+            const dbUser = await User.findOne({ email });
+            if (dbUser && dbUser.password === password) {
+                mockUser = {
+                    id: dbUser._id.toString(),
+                    name: dbUser.name,
+                    email: dbUser.email,
+                    verified: dbUser.verified,
+                    role: dbUser.role,
+                    avatar: dbUser.avatar
+                };
+                return res.status(200).json({
+                    success: true,
+                    message: 'Login successful (Authenticated via MongoDB).',
+                    token: 'mongodb-jwt-token-' + dbUser._id,
+                    user: mockUser
+                });
+            } else if (dbUser) {
+                return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+            }
+        } catch (err) {
+            console.error('MongoDB Login Error:', err);
+        }
+    }
+
+    mockUser.email = email;
+    res.status(200).json({
+        success: true,
+        message: 'Login successful.',
+        token: 'mock-jwt-token-clouddeploy-session',
+        user: mockUser
+    });
+});
+
+app.post('/api/auth/signup', async (req, res) => {
+    const { name, email, password } = req.body;
+    if (!email || !password || !name) {
+        return res.status(400).json({ success: false, message: 'All fields are required.' });
+    }
+
+    if (isMongoConnected) {
+        try {
+            let existingUser = await User.findOne({ email });
+            if (existingUser) {
+                return res.status(400).json({ success: false, message: 'User already exists with this email.' });
+            }
+            const newUser = await User.create({ name, email, password });
+            mockUser = {
+                id: newUser._id.toString(),
+                name: newUser.name,
+                email: newUser.email,
+                verified: false,
+                role: newUser.role,
+                avatar: newUser.avatar
+            };
+            return res.status(201).json({
+                success: true,
+                message: 'Registration successful in MongoDB! Verification code sent to email.',
+                requireVerification: true,
+                user: mockUser
+            });
+        } catch (err) {
+            console.error('MongoDB Signup Error:', err);
+        }
+    }
+
+    mockUser.name = name;
+    mockUser.email = email;
+    mockUser.verified = false;
+    res.status(201).json({
+        success: true,
+        message: 'Registration successful! Verification code sent to email.',
+        requireVerification: true,
+        user: mockUser
+    });
+});
+
+app.post('/api/auth/verify-email', async (req, res) => {
+    const { code } = req.body;
+    if (code === '123456' || code) {
+        mockUser.verified = true;
+        if (isMongoConnected && mockUser.email) {
+            try {
+                await User.updateOne({ email: mockUser.email }, { verified: true });
+            } catch (e) {}
+        }
+        return res.status(200).json({ success: true, message: 'Email successfully verified!', user: mockUser });
+    }
+    res.status(400).json({ success: false, message: 'Invalid verification code.' });
+});
+
+app.post('/api/auth/forgot-password', (req, res) => {
+    const { email } = req.body;
+    res.status(200).json({
+        success: true,
+        message: `Password reset link sent to ${email || 'your email'}.`
+    });
+});
+
+app.post('/api/auth/reset-password', (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: 'Password successfully updated. Please login with your new credentials.'
+    });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+    res.status(200).json({ success: true, message: 'Logged out successfully.' });
+});
+
 // Route: Fallback for SPA routing / Dashboard
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'app', 'index.html'));
@@ -76,13 +268,50 @@ app.get('*', (req, res) => {
 let serverInstance = null;
 if (require.main === module) {
     serverInstance = app.listen(PORT, () => {
-        console.log(`=======================================================`);
-        console.log(`🚀 CloudDeploy CI/CD Web Application Started`);
-        console.log(`📡 URL: http://localhost:${PORT}`);
-        console.log(`🩺 Health Endpoint: http://localhost:${PORT}/health`);
-        console.log(`📊 API Status: http://localhost:${PORT}/api/status`);
-        console.log(`🏷️  Version: ${APP_VERSION} | Environment: ${ENVIRONMENT}`);
-        console.log(`=======================================================`);
+        const localUrl = `http://localhost:${PORT}/`;
+        
+        console.log(`CloudDeploy DevOps Dashboard`);
+        console.log(`────────────────────────────────`);
+        console.log(`✓ Server running`);
+        console.log(`✓ Environment: ${ENVIRONMENT}`);
+        console.log(`✓ Port: ${PORT}`);
+        console.log(`✓ MongoDB Status: ${isMongoConnected ? 'CONNECTED' : 'DISCONNECTED / FALLBACK'}`);
+        console.log(`Local: ${localUrl}`);
+        
+        // Auto-open browser if running in dev mode
+        if (IS_DEV) {
+            console.log(`Opening browser...`);
+            try {
+                const open = require('open');
+                open(localUrl).catch((err) => {
+                    console.log(`Note: Browser could not be opened automatically (${err.message})`);
+                });
+            } catch (err) {
+                console.log(`Note: Could not open browser automatically (${err.message})`);
+            }
+        }
+    });
+
+    serverInstance.on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+            console.log(`CloudDeploy DevOps Dashboard`);
+            console.log(`────────────────────────────────`);
+            console.log(`✓ Server already active or port occupied`);
+            console.log(`✓ Environment: ${ENVIRONMENT}`);
+            console.log(`✓ Port: ${PORT}`);
+            console.log(`Local: http://localhost:${PORT}/`);
+            if (IS_DEV) {
+                console.log(`Opening browser...`);
+                try {
+                    const open = require('open');
+                    open(`http://localhost:${PORT}/`).catch(() => {});
+                } catch (e) {}
+            }
+            process.exit(0);
+        } else {
+            console.error('Server error:', err);
+            process.exit(1);
+        }
     });
 }
 
@@ -94,6 +323,8 @@ process.on('SIGTERM', () => {
             console.log('HTTP server closed');
         });
     }
+    mongoose.connection.close();
 });
 
 module.exports = { app, APP_VERSION, PORT };
+

@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudDeploy - DevOps Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i data-lucide="cloud-lightning" class="logo-icon"></i>
+                    <span>CloudDeploy</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <h4>Overview</h4>
+                    <a href="#dashboard" class="nav-item active" data-page="dashboard">
+                        <i data-lucide="layout-dashboard"></i> Dashboard
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <h4>CI/CD</h4>
+                    <a href="#pipelines" class="nav-item" data-page="pipelines">
+                        <i data-lucide="git-merge"></i> Pipelines
+                    </a>
+                    <a href="#builds" class="nav-item" data-page="builds">
+                        <i data-lucide="box"></i> Builds
+                    </a>
+                    <a href="#deployments" class="nav-item" data-page="deployments">
+                        <i data-lucide="rocket"></i> Deployments
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <h4>Infrastructure</h4>
+                    <a href="#environments" class="nav-item" data-page="environments">
+                        <i data-lucide="server"></i> Environments
+                    </a>
+                    <a href="#containers" class="nav-item" data-page="containers">
+                        <i data-lucide="container"></i> Containers
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <h4>Monitoring</h4>
+                    <a href="#logs" class="nav-item" data-page="logs">
+                        <i data-lucide="terminal"></i> Logs
+                    </a>
+                    <a href="#health" class="nav-item" data-page="health">
+                        <i data-lucide="activity"></i> Health
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <h4>Project</h4>
+                    <a href="#repository" class="nav-item" data-page="repository">
+                        <i data-lucide="github"></i> Repository
+                    </a>
+                    <a href="#settings" class="nav-item" data-page="settings">
+                        <i data-lucide="settings"></i> Settings
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="environment-status">
+                    <span class="status-dot success"></span>
+                    <div class="status-info">
+                        <span class="env-name">Production</span>
+                        <span class="env-version">v1.0.0</span>
+                    </div>
+                </div>
+                <div class="system-status">System Operational</div>
+                <div class="user-profile">
+                    <div class="avatar">
+                        <span>JD</span>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name">John Doe</span>
+                        <span class="user-role">DevOps Engineer</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Navigation -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="mobile-menu-toggle" id="mobile-menu-btn">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <h2 class="page-title" id="topbar-title">Overview</h2>
+                </div>
+                
+                <div class="topbar-right">
+                    <div class="search-box">
+                        <i data-lucide="search"></i>
+                        <input type="text" placeholder="Search resources...">
+                    </div>
+                    
+                    <button class="icon-btn">
+                        <i data-lucide="bell"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                    
+                    <div class="env-selector">
+                        <span class="status-dot success"></span>
+                        <span>Production</span>
+                        <i data-lucide="chevron-down"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Container -->
+            <div class="page-container" id="page-container">
+                <!-- Pages will be injected here via JS -->
+            </div>
+        </main>
+    </div>
+    
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Templates -->
+    <template id="tpl-dashboard">
+        <div class="page-header">
+            <div>
+                <h1>Good afternoon 👋</h1>
+                <p class="subtitle">Here's what's happening with your deployment pipeline.</p>
+                <div class="system-health">
+                    <span class="status-dot success"></span> All systems operational
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="window.runPipeline()">
+                <i data-lucide="play"></i> Run Pipeline
+            </button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="card stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon blue"><i data-lucide="activity"></i></div>
+                    <h3>Pipeline Status</h3>
+                </div>
+                <div class="stat-value text-success">SUCCESS</div>
+                <div class="stat-meta">
+                    <span class="status-dot success"></span> Healthy
+                </div>
+            </div>
+            
+            <div class="card stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon"><i data-lucide="box"></i></div>
+                    <h3>Builds Today</h3>
+                </div>
+                <div class="stat-value">24</div>
+                <div class="stat-meta text-success">
+                    <i data-lucide="arrow-up-right"></i> +12.5%
+                </div>
+            </div>
+            
+            <div class="card stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon"><i data-lucide="rocket"></i></div>
+                    <h3>Deployments</h3>
+                </div>
+                <div class="stat-value">8</div>
+                <div class="stat-meta text-success">
+                    <i data-lucide="arrow-up-right"></i> +2 today
+                </div>
+            </div>
+            
+            <div class="card stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon"><i data-lucide="check-circle"></i></div>
+                    <h3>Build Success Rate</h3>
+                </div>
+                <div class="stat-value">98.4%</div>
+                <div class="stat-meta text-success">
+                    <i data-lucide="arrow-up-right"></i> ↑ 2.1%
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card pipeline-card main-col">
+                <div class="card-header">
+                    <div>
+                        <h3>Production Pipeline</h3>
+                        <p class="card-subtitle">main → production</p>
+                    </div>
+                    <div class="pipeline-meta">
+                        <div class="badge badge-success" id="pipeline-status-badge"><span class="status-dot"></span> SUCCESS</div>
+                    </div>
+                </div>
+                
+                <div class="pipeline-visualization">
+                    <!-- Nodes and connectors -->
+                    <div class="pipeline-node success" id="node-source">
+                        <div class="node-icon"><i data-lucide="github"></i></div>
+                        <span>Source</span>
+                    </div>
+                    <div class="pipeline-connector success" id="conn-1"></div>
+                    <div class="pipeline-node success" id="node-build">
+                        <div class="node-icon"><i data-lucide="box"></i></div>
+                        <span>Build</span>
+                    </div>
+                    <div class="pipeline-connector success" id="conn-2"></div>
+                    <div class="pipeline-node success" id="node-test">
+                        <div class="node-icon"><i data-lucide="check-square"></i></div>
+                        <span>Test</span>
+                    </div>
+                    <div class="pipeline-connector success" id="conn-3"></div>
+                    <div class="pipeline-node success" id="node-docker">
+                        <div class="node-icon"><i data-lucide="container"></i></div>
+                        <span>Docker</span>
+                    </div>
+                    <div class="pipeline-connector success" id="conn-4"></div>
+                    <div class="pipeline-node success" id="node-deploy">
+                        <div class="node-icon"><i data-lucide="rocket"></i></div>
+                        <span>Deploy</span>
+                    </div>
+                    <div class="pipeline-connector success" id="conn-5"></div>
+                    <div class="pipeline-node success" id="node-prod">
+                        <div class="node-icon"><i data-lucide="server"></i></div>
+                        <span>Production</span>
+                    </div>
+                </div>
+                
+                <div class="card-footer space-between mt-6">
+                    <div class="pipeline-timing">
+                        <div><span class="label">Last run:</span> 2 minutes ago</div>
+                        <div><span class="label">Duration:</span> 3m 42s</div>
+                    </div>
+                    <button class="btn btn-secondary btn-sm">View Pipeline</button>
+                </div>
+            </div>
+
+            <div class="card side-col">
+                <div class="card-header">
+                    <h3>Pipeline Activity</h3>
+                </div>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-icon success"><i data-lucide="rocket"></i></div>
+                        <div class="timeline-content">
+                            <h4>Deployment successful</h4>
+                            <p>Production deployment completed</p>
+                            <span class="time">2 minutes ago</span>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-icon success"><i data-lucide="check"></i></div>
+                        <div class="timeline-content">
+                            <h4>Tests passed</h4>
+                            <p>42 tests completed successfully</p>
+                            <span class="time">3 minutes ago</span>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-icon info"><i data-lucide="box"></i></div>
+                        <div class="timeline-content">
+                            <h4>Docker image built</h4>
+                            <p>clouddeploy:v1.0.4</p>
+                            <span class="time">4 minutes ago</span>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-icon info"><i data-lucide="settings"></i></div>
+                        <div class="timeline-content">
+                            <h4>Build completed</h4>
+                            <p>Build #124</p>
+                            <span class="time">5 minutes ago</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Latest Deployment</h3>
+                </div>
+                <div class="deployment-info mt-4">
+                    <div class="deployment-header">
+                        <div class="env-tag">Production</div>
+                        <div class="version-tag">v1.0.4</div>
+                        <div class="badge badge-success"><span class="status-dot"></span> Deployed</div>
+                    </div>
+                    <div class="deployment-time">2 minutes ago</div>
+                    
+                    <div class="meta-grid mt-6">
+                        <div class="meta-item">
+                            <span class="meta-label">Commit</span>
+                            <span class="meta-value commit-hash"><i data-lucide="git-commit"></i> 8f3a21c</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Branch</span>
+                            <span class="meta-value"><i data-lucide="git-branch"></i> main</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Author</span>
+                            <span class="meta-value">Developer</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer mt-6">
+                    <button class="btn btn-secondary w-full">View Deployment</button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Application Health</h3>
+                </div>
+                <div class="health-overview mt-4">
+                    <div class="health-status">
+                        <div class="status-ring">
+                            <span>99.98%</span>
+                            <small>Uptime</small>
+                        </div>
+                        <div class="status-text mt-4">
+                            <span class="status-dot success"></span> Operational
+                        </div>
+                    </div>
+                    <div class="health-metrics">
+                        <div class="h-metric">
+                            <span class="label">CPU</span>
+                            <span class="value">32%</span>
+                            <div class="progress-bar"><div class="progress" style="width: 32%"></div></div>
+                        </div>
+                        <div class="h-metric">
+                            <span class="label">Memory</span>
+                            <span class="value">48%</span>
+                            <div class="progress-bar"><div class="progress" style="width: 48%"></div></div>
+                        </div>
+                        <div class="h-metric">
+                            <span class="label">Response</span>
+                            <span class="value">124ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Container Status</h3>
+                </div>
+                <div class="container-info mt-4">
+                    <div class="c-header flex justify-between align-center">
+                        <div class="c-title flex align-center gap-2 font-medium">
+                            <i data-lucide="container"></i> clouddeploy
+                        </div>
+                        <div class="badge badge-success"><span class="status-dot"></span> Running</div>
+                    </div>
+                    <div class="c-details flex gap-3 mt-3">
+                        <span class="version-tag">v1.0.4</span>
+                        <span class="port-tag">Port: 8080</span>
+                    </div>
+                    
+                    <div class="meta-grid mt-6">
+                        <div class="meta-item">
+                            <span class="meta-label">CPU</span>
+                            <span class="meta-value">18%</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Memory</span>
+                            <span class="meta-value">214 MB</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Uptime</span>
+                            <span class="meta-value">3h 42m</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-6">
+            <div class="card-header space-between">
+                <h3>Recent Builds</h3>
+                <button class="btn btn-secondary btn-sm">View All</button>
+            </div>
+            <div class="table-responsive mt-4">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Build</th>
+                            <th>Commit</th>
+                            <th>Branch</th>
+                            <th>Status</th>
+                            <th>Duration</th>
+                            <th>Triggered</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>#124</strong></td>
+                            <td><span class="commit-hash">8f3a21c</span></td>
+                            <td><span class="branch-tag"><i data-lucide="git-branch" class="icon-sm"></i> main</span></td>
+                            <td><div class="badge badge-success"><i data-lucide="check" class="icon-sm"></i> Success</div></td>
+                            <td>3m 42s</td>
+                            <td>2 min ago</td>
+                        </tr>
+                        <tr>
+                            <td><strong>#123</strong></td>
+                            <td><span class="commit-hash">72ac91d</span></td>
+                            <td><span class="branch-tag"><i data-lucide="git-branch" class="icon-sm"></i> main</span></td>
+                            <td><div class="badge badge-success"><i data-lucide="check" class="icon-sm"></i> Success</div></td>
+                            <td>3m 18s</td>
+                            <td>1 hour ago</td>
+                        </tr>
+                        <tr>
+                            <td><strong>#122</strong></td>
+                            <td><span class="commit-hash">1a92bc4</span></td>
+                            <td><span class="branch-tag"><i data-lucide="git-branch" class="icon-sm"></i> feature/ui</span></td>
+                            <td><div class="badge badge-error"><i data-lucide="x" class="icon-sm"></i> Failed</div></td>
+                            <td>1m 09s</td>
+                            <td>3 hours ago</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card mt-6">
+            <div class="card-header">
+                <h3>Deployment Environments</h3>
+            </div>
+            <div class="env-cards-grid mt-4">
+                <div class="env-card">
+                    <div class="env-card-header space-between">
+                        <h4>Development</h4>
+                        <span class="status-dot success"></span>
+                    </div>
+                    <div class="env-card-body">
+                        <div class="version">v1.0.5</div>
+                        <div class="status-text text-success">Healthy</div>
+                    </div>
+                </div>
+                <div class="env-card">
+                    <div class="env-card-header space-between">
+                        <h4>Staging</h4>
+                        <span class="status-dot success"></span>
+                    </div>
+                    <div class="env-card-body">
+                        <div class="version">v1.0.4</div>
+                        <div class="status-text text-success">Healthy</div>
+                    </div>
+                </div>
+                <div class="env-card">
+                    <div class="env-card-header space-between">
+                        <h4>Production</h4>
+                        <span class="status-dot success"></span>
+                    </div>
+                    <div class="env-card-body">
+                        <div class="version">v1.0.4</div>
+                        <div class="status-text text-success">Healthy</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <template id="tpl-pipelines">
+        <div class="page-header">
+            <div>
+                <h1>Pipelines</h1>
+                <p class="subtitle">Manage and monitor your deployment pipelines.</p>
+            </div>
+            <button class="btn btn-primary">
+                <i data-lucide="plus"></i> Create Pipeline
+            </button>
+        </div>
+        
+        <div class="pipeline-list mt-6 grid gap-4">
+            <div class="card">
+                <div class="card-header space-between">
+                    <div>
+                        <h3>Production Pipeline</h3>
+                        <p class="card-subtitle mt-1">main → production</p>
+                    </div>
+                    <div class="badge badge-success"><span class="status-dot"></span> Success</div>
+                </div>
+                <div class="card-footer mt-4 text-muted text-sm border-t pt-4">
+                    Last run 2 min ago
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header space-between">
+                    <div>
+                        <h3>Development Pipeline</h3>
+                        <p class="card-subtitle mt-1">develop → development</p>
+                    </div>
+                    <div class="badge badge-success"><span class="status-dot"></span> Success</div>
+                </div>
+                <div class="card-footer mt-4 text-muted text-sm border-t pt-4">
+                    Last run 18 min ago
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-builds">
+        <div class="page-header">
+            <div>
+                <h1>Builds</h1>
+                <p class="subtitle">Detailed view of recent pipeline builds.</p>
+            </div>
+        </div>
+        <div class="card mt-6">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Build</th>
+                            <th>Commit</th>
+                            <th>Branch</th>
+                            <th>Author</th>
+                            <th>Status</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="clickable-row" onclick="window.showBuildDetails('#124')">
+                            <td><strong>#124</strong></td>
+                            <td><span class="commit-hash">8f3a21c</span></td>
+                            <td><span class="branch-tag"><i data-lucide="git-branch" class="icon-sm"></i> main</span></td>
+                            <td>Developer</td>
+                            <td><div class="badge badge-success"><i data-lucide="check" class="icon-sm"></i> Success</div></td>
+                            <td>3m 42s</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-deployments">
+        <div class="page-header">
+            <div>
+                <h1>Deployments</h1>
+                <p class="subtitle">View recent deployments across all environments.</p>
+            </div>
+        </div>
+        
+        <div class="card mt-6">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Environment</th>
+                            <th>Version</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Production</strong></td>
+                            <td>v1.0.4</td>
+                            <td><div class="badge badge-success"><i data-lucide="check" class="icon-sm"></i> Successful</div></td>
+                            <td>2 min ago</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Staging</strong></td>
+                            <td>v1.0.5</td>
+                            <td><div class="badge badge-success"><i data-lucide="check" class="icon-sm"></i> Successful</div></td>
+                            <td>1 hour ago</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Development</strong></td>
+                            <td>v1.0.6</td>
+                            <td><div class="badge badge-warning"><span class="status-dot"></span> Running</div></td>
+                            <td>Just now</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+    
+    <template id="tpl-logs">
+        <div class="page-header">
+            <div>
+                <h1>Logs</h1>
+                <p class="subtitle">System and application logs viewer.</p>
+            </div>
+        </div>
+        
+        <div class="card mt-6 terminal-card">
+            <div class="terminal-header">
+                <div class="terminal-actions">
+                    <div class="search-box dark-search">
+                        <i data-lucide="search"></i>
+                        <input type="text" placeholder="Filter logs...">
+                    </div>
+                </div>
+            </div>
+            <div class="terminal-body">
+                <div class="log-line"><span class="log-time">10:42:21</span> <span class="log-level info">INFO</span>  Starting build</div>
+                <div class="log-line"><span class="log-time">10:42:24</span> <span class="log-level info">INFO</span>  Installing dependencies</div>
+                <div class="log-line"><span class="log-time">10:43:12</span> <span class="log-level info">INFO</span>  Running tests</div>
+                <div class="log-line"><span class="log-time">10:43:45</span> <span class="log-level success">SUCCESS</span> Tests passed</div>
+                <div class="log-line"><span class="log-time">10:44:01</span> <span class="log-level info">INFO</span>  Building Docker image</div>
+                <div class="log-line"><span class="log-time">10:44:32</span> <span class="log-level success">SUCCESS</span> Docker image created</div>
+                <div class="log-line"><span class="log-time">10:45:03</span> <span class="log-level info">INFO</span>  Deploying application</div>
+                <div class="log-line"><span class="log-time">10:45:41</span> <span class="log-level success">SUCCESS</span> Deployment completed</div>
+            </div>
+        </div>
+    </template>
+    
+    <template id="tpl-repository">
+        <div class="page-header">
+            <div>
+                <h1>Repository</h1>
+                <p class="subtitle">Source code repository integration.</p>
+            </div>
+            <button class="btn btn-secondary">
+                <i data-lucide="github"></i> Open GitHub
+            </button>
+        </div>
+        
+        <div class="card mt-6">
+            <div class="repo-header space-between">
+                <div>
+                    <h3>cloud-native-cicd-project</h3>
+                    <div class="badge badge-secondary mt-2"><i data-lucide="git-branch" class="icon-sm"></i> main</div>
+                </div>
+                <div class="repo-meta text-right">
+                    <div class="text-sm text-muted">Last commit</div>
+                    <div class="commit-hash mt-1">8f3a21c</div>
+                </div>
+            </div>
+            
+            <div class="file-list mt-6 border-t pt-4">
+                <h4 class="mb-4">Files</h4>
+                <div class="file-item"><i data-lucide="file-text"></i> README.md</div>
+                <div class="file-item"><i data-lucide="file"></i> Dockerfile</div>
+                <div class="file-item"><i data-lucide="file-code"></i> buildspec.yml</div>
+                <div class="file-item"><i data-lucide="folder"></i> app/</div>
+                <div class="file-item"><i data-lucide="folder"></i> tests/</div>
+                <div class="file-item"><i data-lucide="folder"></i> docs/</div>
+            </div>
+        </div>
+    </template>
+    
+    <template id="tpl-settings">
+        <div class="page-header">
+            <div>
+                <h1>Settings</h1>
+                <p class="subtitle">Project and platform configuration.</p>
+            </div>
+            <button class="btn btn-primary">Save Changes</button>
+        </div>
+        
+        <div class="settings-grid mt-6">
+            <div class="card">
+                <div class="card-header border-b pb-4 mb-4">
+                    <h3>General</h3>
+                </div>
+                <div class="form-group">
+                    <label>Project Name</label>
+                    <input type="text" class="form-control" value="CloudDeploy">
+                </div>
+                <div class="form-group">
+                    <label>Environment</label>
+                    <select class="form-control">
+                        <option>Production</option>
+                        <option>Staging</option>
+                        <option>Development</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header border-b pb-4 mb-4">
+                    <h3>CI/CD</h3>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="auto-deploy" checked>
+                    <label for="auto-deploy">Auto deployment</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="auto-test" checked>
+                    <label for="auto-test">Automatic testing</label>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script src="script.js"></script>
+</body>
+</html>

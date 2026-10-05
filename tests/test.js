@@ -147,17 +147,23 @@ async function runTestSuite() {
         try {
             const indexPath = path.join(__dirname, '..', 'app', 'index.html');
             const stylePath = path.join(__dirname, '..', 'app', 'style.css');
-            const scriptPath = path.join(__dirname, '..', 'app', 'script.js');
+            const mockJsPath = path.join(__dirname, '..', 'app', 'js', 'mock.js');
+            const authJsPath = path.join(__dirname, '..', 'app', 'js', 'auth.js');
+            const routerJsPath = path.join(__dirname, '..', 'app', 'js', 'router.js');
+            const appJsPath = path.join(__dirname, '..', 'app', 'js', 'app.js');
             const dockerPath = path.join(__dirname, '..', 'Dockerfile');
             const buildspecPath = path.join(__dirname, '..', 'buildspec.yml');
 
             if (!fs.existsSync(indexPath)) throw new Error("Missing app/index.html");
             if (!fs.existsSync(stylePath)) throw new Error("Missing app/style.css");
-            if (!fs.existsSync(scriptPath)) throw new Error("Missing app/script.js");
+            if (!fs.existsSync(mockJsPath)) throw new Error("Missing app/js/mock.js");
+            if (!fs.existsSync(authJsPath)) throw new Error("Missing app/js/auth.js");
+            if (!fs.existsSync(routerJsPath)) throw new Error("Missing app/js/router.js");
+            if (!fs.existsSync(appJsPath)) throw new Error("Missing app/js/app.js");
             if (!fs.existsSync(dockerPath)) throw new Error("Missing Dockerfile");
             if (!fs.existsSync(buildspecPath)) throw new Error("Missing buildspec.yml");
 
-            logPass("Project File System Integrity", "All core source files, Dockerfile, and buildspec.yml verified");
+            logPass("Project File System Integrity", "All core source files, modular scripts, Dockerfile, and buildspec.yml verified");
         } catch (err) {
             logFail("Project File System Integrity", err.message);
         }
