@@ -168,6 +168,28 @@ async function runTestSuite() {
             logFail("Project File System Integrity", err.message);
         }
 
+        /* ==========================================================
+           TEST 5: Git Connect Hub & Stage Error Diagnosis API
+           ========================================================== */
+        try {
+            const res = await httpGet('/api/github/connect');
+            if (res.statusCode !== 200) {
+                throw new Error(`Expected HTTP 200 OK, got HTTP ${res.statusCode}`);
+            }
+
+            const json = JSON.parse(res.body);
+            if (!json.success || !json.config) {
+                throw new Error("Missing Git Connect configuration payload");
+            }
+            if (!json.config.webhookUrl) {
+                throw new Error("Missing webhookUrl in Git Connect configuration");
+            }
+
+            logPass("Git Connect & Webhook API (GET /api/github/connect)", `Status: 200 OK, Target Repo: '${json.config.owner}/${json.config.repo}'`);
+        } catch (err) {
+            logFail("Git Connect & Webhook API (GET /api/github/connect)", err.message);
+        }
+
         /* =========================================================================
            [DEMONSTRATION ONLY] INTENTIONAL PIPELINE FAILURE HOOK:
            To demonstrate a failed build in AWS CodePipeline during your viva/demo:

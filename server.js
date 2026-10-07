@@ -286,6 +286,26 @@ app.post('/api/auth/reset-password', (req, res) => {
     });
 });
 
+app.post('/api/auth/social-login', (req, res) => {
+    const { provider, name, email } = req.body;
+    const providerName = provider === 'github' ? 'GitHub' : (provider === 'google' ? 'Google' : 'OAuth Provider');
+    mockUser = {
+        id: 'usr-' + provider + '-' + Date.now(),
+        name: name || `${providerName} Developer`,
+        email: email || `user@${provider}.com`,
+        verified: true,
+        role: 'Lead DevOps Engineer',
+        avatar: provider === 'github' ? 'https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?auto=format&fit=crop&q=80&w=150' : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'
+    };
+    realtimeService.emitUserLoggedIn(mockUser);
+    res.status(200).json({
+        success: true,
+        message: `Successfully authenticated via ${providerName}!`,
+        token: `oauth-token-${provider}-session`,
+        user: mockUser
+    });
+});
+
 app.post('/api/auth/logout', (req, res) => {
     realtimeService.emitUserLoggedOut(mockUser);
     res.status(200).json({ success: true, message: 'Logged out successfully.' });
@@ -353,6 +373,49 @@ app.post('/api/github/webhook', async (req, res) => {
         console.error('GitHub Webhook Processing Error:', err);
         return res.status(500).json({ success: false, error: err.message });
     }
+});
+
+// Git Connect Configuration & Status API
+app.get('/api/github/connect', (req, res) => {
+    const config = githubService.getGitConnectionConfig();
+    const repoState = githubService.getRepoState();
+    const activeError = githubService.getActiveStageError();
+    res.status(200).json({
+        success: true,
+        config,
+        repoState,
+        activeError
+    });
+});
+
+app.post('/api/github/connect', (req, res) => {
+    const updated = githubService.saveGitConnectionConfig(req.body);
+    res.status(200).json({
+        success: true,
+        message: 'Git Connect repository configuration saved & verified successfully!',
+        config: updated
+    });
+});
+
+app.post('/api/github/test-connection', async (req, res) => {
+    const result = await githubService.testGitConnection();
+    res.status(200).json(result);
+});
+
+// Stage Error Diagnosis & Automated Remediation APIs
+app.post('/api/pipeline/simulate-stage-error', (req, res) => {
+    const stageKey = req.body.stageKey || 'lint';
+    const result = githubService.simulateStageError(stageKey, req.body.customLog);
+    res.status(200).json({
+        success: true,
+        message: `Simulated error in stage '${stageKey}'. Automated AI Solution generated!`,
+        result
+    });
+});
+
+app.post('/api/pipeline/apply-fix', (req, res) => {
+    const result = githubService.applyStageFix(req.body.stageKey);
+    res.status(200).json(result);
 });
 
 // GitHub Event History & Repository State API

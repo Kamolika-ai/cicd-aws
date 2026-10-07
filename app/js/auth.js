@@ -33,6 +33,41 @@ const CloudDeployAuth = {
     },
 
     /**
+     * Social OAuth Login (Git & Google options)
+     */
+    async socialLogin(provider) {
+        const providerName = provider === 'github' ? 'GitHub' : (provider === 'google' ? 'Google' : 'Email');
+        let user = {
+            id: 'usr-' + provider + '-' + Date.now(),
+            name: provider === 'github' ? 'GitHub DevOps Developer' : (provider === 'google' ? 'Google Cloud Engineer' : 'DevOps Student'),
+            email: provider === 'github' ? 'devops.lead@github.com' : (provider === 'google' ? 'devops.engineer@gmail.com' : 'user@example.com'),
+            role: 'Lead DevOps Engineer',
+            avatar: provider === 'github' ? 'https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?auto=format&fit=crop&q=80&w=150' : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
+            initials: provider === 'github' ? 'GH' : 'G',
+            verified: true,
+            provider: provider,
+            status: 'Active'
+        };
+
+        try {
+            const res = await fetch('/api/auth/social-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ provider, name: user.name, email: user.email })
+            });
+            const data = await res.json();
+            if (data.success && data.user) {
+                user.id = data.user.id || user.id;
+                user.name = data.user.name || user.name;
+                user.email = data.user.email || user.email;
+            }
+        } catch (e) {}
+
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+        return { success: true, message: `Successfully authenticated via ${providerName}!`, user };
+    },
+
+    /**
      * Login Workflow with Backend API & Socket Sync
      */
     async login(email, password) {

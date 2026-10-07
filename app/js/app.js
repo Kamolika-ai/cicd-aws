@@ -123,6 +123,9 @@ function handleRouteRender(route, param, path) {
         case '/repository':
             renderRepository();
             break;
+        case '/git-connect':
+            renderGitConnect();
+            break;
         case '/profile':
             renderProfile();
             break;
@@ -163,6 +166,7 @@ function updateSidebarActive(route) {
             '/environments': 'Environment Health Monitoring',
             '/logs': 'Live Console Log Viewer',
             '/repository': 'Repository Source Explorer',
+            '/git-connect': 'Git Connect & Webhook Control Hub',
             '/profile': 'User Profile & Security',
             '/settings': 'DevOps Project Settings',
             '/login': 'Authentication',
@@ -195,6 +199,44 @@ function renderAuthPage(route) {
     }
 }
 
+let currentAuthTab = 'login';
+
+window.switchAuthTab = function(mode) {
+    currentAuthTab = mode;
+    const loginTab = document.getElementById('tab-auth-login');
+    const signupTab = document.getElementById('tab-auth-signup');
+    const signupNameGroup = document.getElementById('signup-name-group');
+    const loginOptionsRow = document.getElementById('login-options-row');
+    const headerTitle = document.getElementById('auth-header-title');
+    const headerSubtitle = document.getElementById('auth-header-subtitle');
+    const btnText = document.getElementById('btn-login-text');
+
+    if (mode === 'login') {
+        if (loginTab) { loginTab.classList.add('active'); loginTab.style.background = '#38bdf8'; loginTab.style.color = '#0f172a'; }
+        if (signupTab) { signupTab.classList.remove('active'); signupTab.style.background = 'transparent'; signupTab.style.color = '#94a3b8'; }
+        if (signupNameGroup) signupNameGroup.style.display = 'none';
+        if (loginOptionsRow) loginOptionsRow.style.display = 'flex';
+        if (headerTitle) headerTitle.textContent = 'Welcome back to CloudDeploy';
+        if (headerSubtitle) headerSubtitle.textContent = 'Sign in to access your continuous integration pipeline';
+        if (btnText) btnText.textContent = 'Sign In & Go to Dashboard';
+    } else {
+        if (signupTab) { signupTab.classList.add('active'); signupTab.style.background = '#38bdf8'; signupTab.style.color = '#0f172a'; }
+        if (loginTab) { loginTab.classList.remove('active'); loginTab.style.background = 'transparent'; loginTab.style.color = '#94a3b8'; }
+        if (signupNameGroup) signupNameGroup.style.display = 'block';
+        if (loginOptionsRow) loginOptionsRow.style.display = 'none';
+        if (headerTitle) headerTitle.textContent = 'Create your CloudDeploy Account';
+        if (headerSubtitle) headerSubtitle.textContent = 'Sign up to manage cloud pipelines and automated deployments';
+        if (btnText) btnText.textContent = 'Create Account & Go to Dashboard';
+    }
+};
+
+window.handleSocialAuth = async function(provider) {
+    const res = await window.CloudDeployAuth.socialLogin(provider);
+    if (res && res.success) {
+        window.CloudDeployRouter.navigate('/dashboard');
+    }
+};
+
 /**
  * Setup Login Page Interactions & Mock Authentication Handler
  */
@@ -203,10 +245,12 @@ function setupLoginPage() {
     const togglePwBtn = document.getElementById('btn-toggle-login-pw');
     const pwInput = document.getElementById('login-password-input');
     const emailInput = document.getElementById('login-email-input');
+    const nameInput = document.getElementById('signup-name-input');
     const alertError = document.getElementById('login-alert-error');
     const errText = document.getElementById('login-error-text');
     const errEmail = document.getElementById('err-login-email');
     const errPw = document.getElementById('err-login-password');
+    const errName = document.getElementById('err-signup-name');
     const btnSubmit = document.getElementById('btn-login-submit');
     const spinner = document.getElementById('spinner-login-btn');
     const btnText = document.getElementById('btn-login-text');
@@ -242,15 +286,22 @@ function setupLoginPage() {
         if (alertError) alertError.style.display = 'none';
         if (errEmail) errEmail.style.display = 'none';
         if (errPw) errPw.style.display = 'none';
+        if (errName) errName.style.display = 'none';
         if (emailInput) emailInput.classList.remove('input-error');
         if (pwInput) pwInput.classList.remove('input-error');
 
         const email = emailInput ? emailInput.value.trim() : '';
         const password = pwInput ? pwInput.value : '';
+        const name = nameInput ? nameInput.value.trim() : 'DevOps User';
 
         // Validation
         let isValid = true;
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (currentAuthTab === 'signup' && !name) {
+            if (errName) { errName.textContent = 'Full name is required.'; errName.style.display = 'block'; }
+            isValid = false;
+        }
 
         if (!email) {
             if (errEmail) { errEmail.textContent = 'Email address is required.'; errEmail.style.display = 'block'; }
@@ -275,19 +326,25 @@ function setupLoginPage() {
         if (spinner) spinner.style.display = 'inline-block';
         if (btnText) btnText.textContent = 'Authenticating...';
 
-        // Async Authentication & Socket Event Emission
+        // Async Authentication & Redirection to Main Dashboard
         (async () => {
             try {
-                const res = await window.CloudDeployAuth.login(email, password);
+                let res;
+                if (currentAuthTab === 'signup') {
+                    res = await window.CloudDeployAuth.signup(name, email, password);
+                } else {
+                    res = await window.CloudDeployAuth.login(email, password);
+                }
+
                 if (btnSubmit) btnSubmit.disabled = false;
                 if (spinner) spinner.style.display = 'none';
-                if (btnText) btnText.textContent = 'Sign In';
+                if (btnText) btnText.textContent = currentAuthTab === 'signup' ? 'Create Account & Go to Dashboard' : 'Sign In & Go to Dashboard';
 
                 if (res && res.success) {
                     window.CloudDeployRouter.navigate('/dashboard');
                 } else {
                     if (alertError && errText) {
-                        errText.textContent = (res && res.message) || 'Invalid email or password. Please check your credentials and try again.';
+                        errText.textContent = (res && res.message) || 'Authentication failed. Please check your details.';
                         alertError.style.display = 'flex';
                     }
                 }
@@ -684,4 +741,177 @@ function renderSettings() {
             if (targetSec) targetSec.style.display = 'block';
         });
     });
+}
+
+/**
+ * 11. Render Git Connect Page & Error Diagnosis
+ */
+async function renderGitConnect() {
+    try {
+        const res = await fetch('/api/github/connect');
+        const data = await res.json();
+        if (data.success && data.config) {
+            const repoInput = document.getElementById('git-input-repo-url');
+            const branchInput = document.getElementById('git-input-branch');
+            const secretInput = document.getElementById('git-input-secret');
+            const webhookUrlDisplay = document.getElementById('git-webhook-url-display');
+
+            if (repoInput) repoInput.value = data.config.repoUrl || 'https://github.com/Kamolika-ai/cicd-aws';
+            if (branchInput) branchInput.value = data.config.branch || 'main';
+            if (secretInput) secretInput.value = data.config.webhookSecret || 'clouddeploy_webhook_secret_998';
+            if (webhookUrlDisplay) webhookUrlDisplay.textContent = `${window.location.origin}/api/github/webhook`;
+
+            if (data.activeError) {
+                renderStageErrorDiagnosis(data.activeError);
+            } else {
+                renderStageErrorDiagnosis(null);
+            }
+        }
+    } catch (err) {
+        console.error('Fetch Git Connect error:', err);
+    }
+}
+
+window.saveGitConnectConfig = async function () {
+    const repoUrl = document.getElementById('git-input-repo-url')?.value;
+    const branch = document.getElementById('git-input-branch')?.value;
+    const webhookSecret = document.getElementById('git-input-secret')?.value;
+
+    try {
+        const res = await fetch('/api/github/connect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ repoUrl, branch, webhookSecret })
+        });
+        const data = await res.json();
+        if (data.success) {
+            window.alert('✓ Git Connect configuration saved & verified successfully!');
+            renderGitConnect();
+        }
+    } catch (err) {
+        window.alert('Failed to save Git Connect configuration: ' + err.message);
+    }
+};
+
+window.testGitConnection = async function () {
+    try {
+        const res = await fetch('/api/github/test-connection', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            window.alert(`✓ Connection Verified! Repository: ${data.repository} (${data.branch}). Webhook status: ${data.status}`);
+        } else {
+            window.alert(`✖ Connection test failed: ${data.status}`);
+        }
+    } catch (err) {
+        window.alert('API test failed: ' + err.message);
+    }
+};
+
+window.simulateStagePush = async function (stageType) {
+    if (stageType === 'clean') {
+        const res = await fetch('/api/pipeline/apply-fix', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        const data = await res.json();
+        renderStageErrorDiagnosis(null);
+    } else {
+        const res = await fetch('/api/pipeline/simulate-stage-error', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ stageKey: stageType })
+        });
+        const data = await res.json();
+        if (data.result && data.result.activeStageError) {
+            renderStageErrorDiagnosis(data.result.activeStageError);
+        }
+    }
+};
+
+window.applyStageFix = async function (stageKey) {
+    try {
+        const res = await fetch('/api/pipeline/apply-fix', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ stageKey })
+        });
+        const data = await res.json();
+        if (data.success) {
+            renderStageErrorDiagnosis(null);
+        }
+    } catch (err) {
+        console.error('Apply stage fix error:', err);
+    }
+};
+
+function renderStageErrorDiagnosis(errorData) {
+    const container = document.getElementById('git-connect-error-container');
+    if (!container) return;
+
+    if (!errorData) {
+        container.innerHTML = `
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); padding: 18px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 24px;">🎉</span>
+                    <div>
+                        <h4 style="margin: 0; color: #10b981; font-size: 15px;">Pipeline Healthy — All 10/10 Stages Passed!</h4>
+                        <p style="margin: 2px 0 0 0; color: #94a3b8; font-size: 13px;">No active stage errors detected. Application is ready for cloud deployment.</p>
+                    </div>
+                </div>
+                <button class="btn" onclick="window.CloudDeployRouter.navigate('/pipelines')" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer;">View Live Pipeline</button>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        <div style="background: rgba(239, 68, 68, 0.08); border: 2px solid rgba(239, 68, 68, 0.5); padding: 20px; border-radius: 12px; margin-top: 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; border-bottom: 1px solid rgba(239, 68, 68, 0.2); padding-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">${errorData.stageIcon || '🚨'}</span>
+                    <div>
+                        <h3 style="margin: 0; color: #f87171; font-size: 16px; font-weight: 700;">STAGE FAILURE DETECTED: ${escapeHtml(errorData.stageName)}</h3>
+                        <span style="font-size: 12px; color: #fca5a5; background: rgba(239, 68, 68, 0.2); padding: 2px 8px; border-radius: 4px; font-family: monospace;">Category: ${errorData.errorCategory}</span>
+                    </div>
+                </div>
+                <button class="btn" onclick="window.applyStageFix('${errorData.stageKey}')" style="background: #10b981; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);">
+                    <span>✨</span> Apply Automated AI Solution
+                </button>
+            </div>
+
+            <!-- Root Cause -->
+            <div style="margin-bottom: 14px;">
+                <h4 style="margin: 0 0 4px 0; color: #fbbf24; font-size: 14px;">🔍 Root Cause Analysis:</h4>
+                <p style="margin: 0; color: #cbd5e1; font-size: 13px; line-height: 1.5;">${escapeHtml(errorData.rootCause)}</p>
+            </div>
+
+            <!-- Error Log Traceback -->
+            <div style="margin-bottom: 16px;">
+                <h4 style="margin: 0 0 4px 0; color: #f87171; font-size: 14px;">📜 Log Traceback Snippet:</h4>
+                <pre style="background: rgba(0,0,0,0.7); color: #fca5a5; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; border: 1px solid rgba(239, 68, 68, 0.3); overflow-x: auto; margin: 0;"><code>${escapeHtml(errorData.errorMessage)}</code></pre>
+            </div>
+
+            <!-- Step-by-Step Remediation Guide -->
+            <div style="margin-bottom: 16px;">
+                <h4 style="margin: 0 0 6px 0; color: #38bdf8; font-size: 14px;">💡 Step-by-Step Solution Guide (${escapeHtml(errorData.solutionTitle)}):</h4>
+                <ol style="margin: 0; padding-left: 20px; color: #e2e8f0; font-size: 13px; line-height: 1.6;">
+                    ${errorData.solutionSteps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}
+                </ol>
+            </div>
+
+            <!-- Code Fix -->
+            ${errorData.codeFix ? `
+                <div>
+                    <h4 style="margin: 0 0 6px 0; color: #34d399; font-size: 14px;">🛠️ Recommended Code / Configuration Fix:</h4>
+                    <pre style="background: rgba(15, 23, 42, 0.9); color: #34d399; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; border: 1px solid rgba(52, 211, 153, 0.3); overflow-x: auto; margin: 0;"><code>${escapeHtml(errorData.codeFix)}</code></pre>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }

@@ -409,6 +409,20 @@
             showToast(`🔀 GitHub PR #${data.prNumber} ${data.status}`, `"${data.prTitle}" by ${data.author}`, data.status === 'MERGED' ? 'success' : 'info');
         });
 
+        socket.on('pipeline:stage_error', (errorData) => {
+            showToast(`🔴 Stage Failed: ${errorData.stageName}`, errorData.errorMessage, 'error');
+            if (window.renderStageErrorDiagnosis) {
+                window.renderStageErrorDiagnosis(errorData);
+            }
+        });
+
+        socket.on('pipeline:error_resolved', () => {
+            showToast('✅ Stage Fixed', 'Pipeline restored to 100% HEALTHY status', 'success');
+            if (window.renderStageErrorDiagnosis) {
+                window.renderStageErrorDiagnosis(null);
+            }
+        });
+
         socket.on('github:repo_state', (state) => {
             if (!state) return;
             const totalEventsEl = document.getElementById('gh-total-events');
